@@ -73,6 +73,10 @@ def use(broker, debug=False, **kwargs):
 
         return ClientTrader()
 
+    if broker.lower() in ["ths_mac", "同花顺mac客户端"]:
+        from .clienttradermac import MACClientTrader
+        return MACClientTrader()
+
     raise NotImplementedError
 
 

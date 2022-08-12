@@ -8,7 +8,8 @@ import sys
 import time
 from typing import Type, Union
 
-import hashlib, binascii
+import hashlib
+import binascii
 
 import easyutils
 from pywinauto import findwindows, timings
@@ -24,6 +25,7 @@ from easytrader.utils.perf import perf_clock
 if not sys.platform.startswith("darwin"):
     import pywinauto
     import pywinauto.clipboard
+
 
 class IClientTrader(abc.ABC):
     @property
@@ -62,7 +64,8 @@ class IClientTrader(abc.ABC):
 class ClientTrader(IClientTrader):
     _editor_need_type_keys = False
     # The strategy to use for getting grid data
-    grid_strategy: Union[IGridStrategy, Type[IGridStrategy]] = grid_strategies.Copy
+    grid_strategy: Union[IGridStrategy,
+                         Type[IGridStrategy]] = grid_strategies.Copy
     _grid_strategy_instance: IGridStrategy = None
     refresh_strategy: IRefreshStrategy = refresh_strategies.Switch()
 
@@ -143,7 +146,7 @@ class ClientTrader(IClientTrader):
 
     @property
     def position(self):
-        self._switch_left_menus(["查询[F4]", "资金股票"])
+        self._switch_left_menus(["交易", "持仓"])
 
         return self._get_grid_data(self._config.COMMON_GRID_CONTROL_ID)
 
@@ -267,7 +270,8 @@ class ClientTrader(IClientTrader):
         :return: {'entrust_no': '委托单号'}
         """
         code = security[-6:]
-        self._type_edit_control_keys(self._config.TRADE_SECURITY_CONTROL_ID, code)
+        self._type_edit_control_keys(
+            self._config.TRADE_SECURITY_CONTROL_ID, code)
         if ttype is not None:
             retry = 0
             retry_max = 10
@@ -278,7 +282,8 @@ class ClientTrader(IClientTrader):
                 except:
                     retry += 1
                     self.wait(0.1)
-        self._set_market_trade_params(security, amount, limit_price=limit_price)
+        self._set_market_trade_params(
+            security, amount, limit_price=limit_price)
         self._submit_trade()
 
         return self._handle_pop_dialogs(
@@ -449,7 +454,8 @@ class ClientTrader(IClientTrader):
     def _set_trade_params(self, security, price, amount):
         code = security[-6:]
 
-        self._type_edit_control_keys(self._config.TRADE_SECURITY_CONTROL_ID, code)
+        self._type_edit_control_keys(
+            self._config.TRADE_SECURITY_CONTROL_ID, code)
 
         # wait security input finish
         self.wait(0.1)
@@ -500,7 +506,8 @@ class ClientTrader(IClientTrader):
                 control_id=control_id, class_name="Edit"
             ).set_edit_text(text)
         else:
-            editor = self._main.child_window(control_id=control_id, class_name="Edit")
+            editor = self._main.child_window(
+                control_id=control_id, class_name="Edit")
             editor.select()
             editor.type_keys(text)
 
@@ -543,7 +550,8 @@ class ClientTrader(IClientTrader):
                 return handle
             # pylint: disable=broad-except
             except Exception as ex:
-                logger.exception("error occurred when trying to get left menus")
+                logger.exception(
+                    "error occurred when trying to get left menus")
             count = count - 1
 
     def _cancel_entrust_by_double_click(self, row):

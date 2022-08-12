@@ -16,6 +16,9 @@ def create(broker):
         return HTZQ
     if broker == "universal":
         return UNIVERSAL
+    if broker == "ths_mac":
+        return MAC_THS
+
     raise NotImplementedError
 
 
@@ -145,6 +148,7 @@ class GJ(CommonConfig):
 
     AUTO_IPO_MENU_PATH = ["新股申购", "新股批量申购"]
 
+
 class GF(CommonConfig):
     DEFAULT_EXE_PATH = "C:\\gfzqrzrq\\xiadan.exe"
     TITLE = "核新网上交易系统"
@@ -163,19 +167,13 @@ class GF(CommonConfig):
 
     AUTO_IPO_MENU_PATH = ["新股申购", "批量新股申购"]
 
+
 class WK(HT):
     pass
 
 
 class HTZQ(CommonConfig):
     DEFAULT_EXE_PATH = r"c:\\海通证券委托\\xiadan.exe"
-
-    BALANCE_CONTROL_ID_GROUP = {
-        "资金余额": 1012,
-        "可用金额": 1016,
-        "可取金额": 1017,
-        "总资产": 1015,
-    }
 
     AUTO_IPO_NUMBER = '可申购数量'
 
@@ -191,3 +189,34 @@ class UNIVERSAL(CommonConfig):
     }
 
     AUTO_IPO_NUMBER = '可申购数量'
+
+
+class MAC_THS(CommonConfig):
+    LEFT_MENU_ID = {
+        "自选": 0,
+        "个股": 1,
+        "行情": 2,
+        "全球": 3,
+        "期货": 4,
+        "交易": 5,
+        "选股": 6,
+        "发现": 7,
+        "决策": 8,
+
+    }
+
+    BALANCE_CONTROL_ID_GROUP = {
+        "总资产": 0,
+        "总市值": 1,
+        "总盈亏": 2,
+        "当日盈亏": 3,
+        "资金余额": 4,
+        "可取金额": 5,
+        "可用金额": 6,
+    }
+
+    TABLE_CONTROL_ID = {
+        "position": 3,
+        "entrusts": 3,
+        "trades": 3
+    }

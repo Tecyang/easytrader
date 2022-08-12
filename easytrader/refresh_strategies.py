@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 import abc
 import io
+import sys
 import tempfile
 from io import StringIO
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 import pandas as pd
-import pywinauto.keyboard
-import pywinauto
-import pywinauto.clipboard
+if not sys.platform.startswith("darwin"):
+    import pywinauto.keyboard
+    import pywinauto
+    import pywinauto.clipboard
+    from easytrader.utils.win_gui import SetForegroundWindow, ShowWindow, win32defines
 
 from easytrader.log import logger
 from easytrader.utils.captcha import captcha_recognize
-from easytrader.utils.win_gui import SetForegroundWindow, ShowWindow, win32defines
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import

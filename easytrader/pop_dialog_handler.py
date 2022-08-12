@@ -1,11 +1,13 @@
 # coding:utf-8
 import re
 import time
+import sys
 from typing import Optional
 
 from easytrader import exceptions
 from easytrader.utils.perf import perf_clock
-from easytrader.utils.win_gui import SetForegroundWindow, ShowWindow, win32defines
+if not sys.platform.startswith("darwin"):
+    from easytrader.utils.win_gui import SetForegroundWindow, ShowWindow, win32defines
 
 
 class PopDialogHandler:

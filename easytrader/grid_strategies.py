@@ -2,17 +2,22 @@
 import abc
 import io
 import tempfile
+import sys
 from io import StringIO
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 import pandas as pd
-import pywinauto.keyboard
-import pywinauto
-import pywinauto.clipboard
+if sys.platform.startswith("darwin"):
+    import atomac
+else:
+    import pywinauto.keyboard
+    import pywinauto
+    import pywinauto.clipboard
 
 from easytrader.log import logger
 from easytrader.utils.captcha import captcha_recognize
-from easytrader.utils.win_gui import SetForegroundWindow, ShowWindow, win32defines
+if not sys.platform.startswith("darwin"):
+    from easytrader.utils.win_gui import SetForegroundWindow, ShowWindow, win32defines
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import
@@ -97,7 +102,8 @@ class Copy(BaseStrategy):
     def _get_clipboard_data(self) -> str:
         if Copy._need_captcha_reg:
             if (
-                    self._trader.app.top_window().window(class_name="Static", title_re="验证码").exists(timeout=1)
+                    self._trader.app.top_window().window(
+                        class_name="Static", title_re="验证码").exists(timeout=1)
             ):
                 file_path = "tmp.png"
                 count = 5
@@ -120,7 +126,9 @@ class Copy(BaseStrategy):
                         )  # 模拟输入验证码
 
                         self._trader.app.top_window().set_focus()
-                        pywinauto.keyboard.SendKeys("{ENTER}")  # 模拟发送enter，点击确定
+
+                        pywinauto.keyboard.SendKeys(
+                            "{ENTER}")  # 模拟发送enter，点击确定
                         try:
                             logger.info(
                                 self._trader.app.top_window()
@@ -179,7 +187,8 @@ class Xls(BaseStrategy):
         grid = self._get_grid(control_id)
 
         # ctrl+s 保存 grid 内容为 xls 文件
-        self._set_foreground(grid)  # setFocus buggy, instead of SetForegroundWindow
+        # setFocus buggy, instead of SetForegroundWindow
+        self._set_foreground(grid)
         grid.type_keys("^s", set_foreground=False)
         count = 10
         while count > 0:
@@ -194,7 +203,8 @@ class Xls(BaseStrategy):
         # alt+s保存，alt+y替换已存在的文件
         self._trader.app.top_window().Edit1.set_edit_text(temp_path)
         self._trader.wait(0.1)
-        self._trader.app.top_window().type_keys("%{s}%{y}", set_foreground=False)
+        self._trader.app.top_window().type_keys(
+            "%{s}%{y}", set_foreground=False)
         # Wait until file save complete otherwise pandas can not find file
         self._trader.wait(0.2)
         if self._trader.is_exist_pop_dialog():
