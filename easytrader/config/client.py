@@ -216,9 +216,9 @@ class MAC_THS(CommonConfig):
     }
 
     TABLE_CONTROL_ID = {
-        "position": 3,
-        "entrusts": 3,
-        "trades": 3
+        "position": 70,
+        "entrusts": 74,
+        "trades": 68
     }
 
     TRADE_SECURITY_CONTROL_ID = 36

@@ -158,10 +158,12 @@ class MACClientTrader(IClientTrader):
         # print('获取到表格')
         for key, control_id in self._config.BALANCE_CONTROL_ID_GROUP.items():
             result[key] = float(
-                table.AXRows[control_id].findAllR(
-                    AXRole='AXStaticText')[1].AXValue
+                self._main.findFirstR(
+                    AXRole='AXTable').AXChildren[control_id].AXChildren[1].AXChildren[0].AXValue
+                # table.AXRows[control_id].findAllR(
+                #     AXRole='AXStaticText')[1].AXValue
             )
-            # print("获取表格行: {} - {} - {}".format(control_id, key, result[key]))
+            print("获取表格行: {} - {} - {}".format(control_id, key, result[key]))
         return result
 
     @property
@@ -173,8 +175,9 @@ class MACClientTrader(IClientTrader):
         # "trades": 4
 
     def _get_data_from_table(self, control):
-        table = self._main.findAllR(AXRole='AXTable')[
-            self.config.TABLE_CONTROL_ID[control]]
+        # table = self._main.findAllR(AXRole='AXTable')[
+        #     self.config.TABLE_CONTROL_ID[control]]
+        table = self._main.AXChildren[self.config.TABLE_CONTROL_ID[control]].AXChildren[0]
         result = []
         titles = table.AXHeader.findAllR(AXRole='AXButton')
         for row in table.AXRows:
@@ -710,11 +713,11 @@ if __name__ == '__main__':
     trader.connect()
     # balance = trader.balance
     # print(balance)
-    # position = trader.position
-    # print(position)
-    # entrusts = trader.today_entrusts
-    # print(entrusts)
-    # trades = trader.today_trades
-    # print(trades)
-    trader.buy('zh002119', '16.89', '100')
+    position = trader.position
+    print(position)
+    entrusts = trader.today_entrusts
+    print(entrusts)
+    trades = trader.today_trades
+    print(trades)
+    # trader.buy('zh002119', '16.89', '1')
     # trader.sell('zh002119', '16.89', '1')
