@@ -26,13 +26,9 @@ from easytrader.log import logger
 from easytrader.refresh_strategies import IRefreshStrategy
 from easytrader.utils.misc import file2dict
 from easytrader.utils.perf import perf_clock
-
-if sys.platform.startswith("darwin"):
-    import atomacos
-    from atomacos.keyboard import *
-if not sys.platform.startswith("darwin"):
-    import pywinauto
-    import pywinauto.clipboard
+import atomacos
+from atomacos.keyboard import *
+import pywinauto
 
 
 class IClientTrader(abc.ABC):
@@ -193,24 +189,26 @@ class MACClientTrader(IClientTrader):
 
     @ property
     def today_entrusts(self):
-        self._switch_left_menus(["交易", "委托"])
+        self._switch_left_menus(["交易", "模拟", "委托"])
         return self._get_data_from_table("entrusts")
 
     @ property
     def today_trades(self):
-        self._switch_left_menus(["交易", "成交"])
+        self._switch_left_menus(["交易", "模拟", "成交"])
         return self._get_data_from_table("trades")
 
     @ property
     def cancel_entrusts(self):
-        self.refresh()
+        # TODO
+        # self.refresh()
         self._switch_left_menus(["撤单[F3]"])
 
         return self._get_grid_data(self._config.COMMON_GRID_CONTROL_ID)
 
     @ perf_clock
     def cancel_entrust(self, entrust_no):
-        self.refresh()
+        # TODO
+        # self.refresh()
         for i, entrust in enumerate(self.cancel_entrusts):
             if entrust[self._config.CANCEL_ENTRUST_ENTRUST_FIELD] == entrust_no:
                 self._cancel_entrust_by_double_click(i)
@@ -218,27 +216,36 @@ class MACClientTrader(IClientTrader):
         return {"message": "委托单状态错误不能撤单, 该委托单可能已经成交或者已撤"}
 
     def cancel_all_entrusts(self):
-        self.refresh()
-        self._switch_left_menus(["撤单[F3]"])
-
+        # self.refresh()
+        self._switch_left_menus(["交易", "模拟", "委托", "全撤"])
         # 点击全部撤销控件
-        self._app.top_window().child_window(
-            control_id=self._config.TRADE_CANCEL_ALL_ENTRUST_CONTROL_ID, class_name="Button", title_re="""全撤.*"""
-        ).click()
         self.wait(0.2)
+        self.confirm_pop_dialog()
 
+    def cancel_all_buy_entrusts(self):
+        # self.refresh()
+        self._switch_left_menus(["交易", "模拟", "委托", "撤买"])
+        # 点击全部撤销控件
+        self.wait(0.2)
+        self.confirm_pop_dialog()
+
+    def cancel_all_sell_entrusts(self):
+        # self.refresh()
+        self._switch_left_menus(["交易", "模拟", "委托", "撤卖"])
+        # 点击全部撤销控件
+        self.wait(0.2)
+        self.confirm_pop_dialog()
+
+    @perf_clock
+    def confirm_pop_dialog(self):
         # 等待出现 确认兑换框
         if self.is_exist_pop_dialog():
             # 点击是 按钮
-            w = self._app.top_window()
-            if w is not None:
-                btn = w["是(Y)"]
-                if btn is not None:
-                    btn.click()
-                    self.wait(0.2)
-
-        # 如果出现了确认窗口
-        self.close_pop_dialog()
+            w = self._app.AXFocusedWindow
+            w.findFirstR(AXRole='AXButton', AXTitle='确认').Press()
+            self.wait(0.2)
+            # 如果出现了确认窗口
+            self.close_pop_dialog()
 
     @ perf_clock
     def repo(self, security, price, amount, **kwargs):
@@ -430,10 +437,18 @@ class MACClientTrader(IClientTrader):
     def close_pop_dialog(self):
         try:
             if self.is_exist_pop_dialog():
-                w = self._app.findFirstR(AXRole='AXSheet')
-                if w is not None:
-                    w.findFirstR(AXRole='AXButton', AXTitle='取消').Press()
+                w = self.app.AXFocusedWindow
+                w2 = self.app.AXChildren[0]
+                if w != w2:
+                    atomacos.mouse.click(w.AXPosition)
+                    self._main = w
                     self.wait(0.2)
+                else:
+                    w = self._app.findFirstR(AXRole='AXSheet')
+                    if w is not None:
+                        w.findFirstR(AXRole='AXButton', AXTitle='取消').Press()
+                        self.wait(0.2)
+
         except (
                 # findwindows.ElementNotFoundError,
                 # timings.TimeoutError,
@@ -595,8 +610,9 @@ class MACClientTrader(IClientTrader):
 
     @ perf_clock
     def _switch_left_menus(self, path, sleep=0.2):
-        # 这里原作者是出于什么考虑加的0.2未知
         print('菜单点击{}'.format(path))
+        if self.is_exist_pop_dialog():
+            self.close_pop_dialog()
         for i in range(len(path)):
             if i == 0:
                 self._main.buttons()[self.config.LEFT_MENU_ID[path[i]]].Press()
@@ -610,7 +626,7 @@ class MACClientTrader(IClientTrader):
 
     def _switch_left_menus_by_shortcut(self, shortcut, sleep=0.5):
         self.close_pop_dialog()
-        self._app.top_window().type_keys(shortcut)
+        # self._app.top_window().type_keys(shortcut)
         self.wait(sleep)
 
     @ functools.lru_cache()
@@ -713,11 +729,14 @@ if __name__ == '__main__':
     trader.connect()
     # balance = trader.balance
     # print(balance)
-    position = trader.position
-    print(position)
-    entrusts = trader.today_entrusts
-    print(entrusts)
-    trades = trader.today_trades
-    print(trades)
+    # position = trader.position
+    # print(position)
+    # entrusts = trader.today_entrusts
+    # print(entrusts)
+    # trades = trader.today_trades
+    # print(trades)
     # trader.buy('zh002119', '16.89', '1')
     # trader.sell('zh002119', '16.89', '1')
+    trader.cancel_all_entrusts()
+    trader.cancel_all_buy_entrusts()
+    trader.cancel_all_sell_entrusts()
