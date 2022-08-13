@@ -173,7 +173,8 @@ class MACClientTrader(IClientTrader):
     def _get_data_from_table(self, control):
         # table = self._main.findAllR(AXRole='AXTable')[
         #     self.config.TABLE_CONTROL_ID[control]]
-        table = self._main.AXChildren[self.config.TABLE_CONTROL_ID[control]].AXChildren[0]
+        # table = self._main.AXChildren[self.config.TABLE_CONTROL_ID[control]].AXChildren[0]
+        table = self._main.findFirstR(AXRole='AXGroup').AXParent
         result = []
         titles = table.AXHeader.findAllR(AXRole='AXButton')
         for row in table.AXRows:
@@ -727,16 +728,16 @@ class BaseLoginClientTrader(MACClientTrader):
 if __name__ == '__main__':
     trader = MACClientTrader()
     trader.connect()
-    # balance = trader.balance
-    # print(balance)
-    # position = trader.position
-    # print(position)
-    # entrusts = trader.today_entrusts
-    # print(entrusts)
-    # trades = trader.today_trades
-    # print(trades)
-    # trader.buy('zh002119', '16.89', '1')
-    # trader.sell('zh002119', '16.89', '1')
-    trader.cancel_all_entrusts()
+    balance = trader.balance
+    print(balance)
+    position = trader.position
+    print(position)
+    entrusts = trader.today_entrusts
+    print(entrusts)
+    trades = trader.today_trades
+    print(trades)
+    trader.buy('zh002119', '16.89', '1')
+    trader.sell('zh002119', '16.89', '1')
     trader.cancel_all_buy_entrusts()
     trader.cancel_all_sell_entrusts()
+    trader.cancel_all_entrusts()
