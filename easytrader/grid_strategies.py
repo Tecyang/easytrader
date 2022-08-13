@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 
 import pandas as pd
 if sys.platform.startswith("darwin"):
-    import atomac
+    import atomacos
 else:
     import pywinauto.keyboard
     import pywinauto

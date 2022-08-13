@@ -220,3 +220,7 @@ class MAC_THS(CommonConfig):
         "entrusts": 3,
         "trades": 3
     }
+
+    TRADE_SECURITY_CONTROL_ID = 36
+    TRADE_PRICE_CONTROL_ID = 32
+    TRADE_AMOUNT_CONTROL_ID = 37
