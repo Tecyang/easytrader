@@ -19,9 +19,8 @@ import binascii
 import easyutils
 # from pywinauto import findwindows, timings
 
-from easytrader import grid_strategies, pop_dialog_handler_mac_ths, refresh_strategies
+from easytrader import pop_dialog_handler_mac_ths, refresh_strategies
 from easytrader.config import client
-from easytrader.grid_strategies import IGridStrategy
 from easytrader.log import logger
 from easytrader.refresh_strategies import IRefreshStrategy
 from easytrader.utils.misc import file2dict
@@ -67,10 +66,6 @@ class IClientTrader(abc.ABC):
 
 class MACClientTrader(IClientTrader):
     _editor_need_type_keys = False
-    # The strategy to use for getting grid data
-    grid_strategy: Union[IGridStrategy,
-                         Type[IGridStrategy]] = grid_strategies.Copy
-    _grid_strategy_instance: IGridStrategy = None
     refresh_strategy: IRefreshStrategy = refresh_strategies.Switch()
 
     def enable_type_keys_for_editor(self):
@@ -78,17 +73,6 @@ class MACClientTrader(IClientTrader):
         有些客户端无法通过 set_edit_text 方法输入内容，可以通过使用 type_keys 方法绕过
         """
         self._editor_need_type_keys = True
-
-    @property
-    def grid_strategy_instance(self):
-        if self._grid_strategy_instance is None:
-            self._grid_strategy_instance = (
-                self.grid_strategy
-                if isinstance(self.grid_strategy, IGridStrategy)
-                else self.grid_strategy()
-            )
-            self._grid_strategy_instance.set_trader(self)
-        return self._grid_strategy_instance
 
     def __init__(self):
         self._config = client.create(self.broker_type)
@@ -125,7 +109,8 @@ class MACClientTrader(IClientTrader):
             atomacos.launchAppByBundleId("cn.com.10jqka.macstockPro")
             self._app = atomacos.getAppRefByBundleId(
                 "cn.com.10jqka.macstockPro")
-            self._main = self._app.windows()[0]
+            # self._main = self._app.windows()[0]
+            self._main = self._app.AXFocusedWindow
             print('成功获取到程序实例')
         else:
             self._app = pywinauto.Application().connect(path=connect_path, timeout=10)
@@ -164,17 +149,20 @@ class MACClientTrader(IClientTrader):
 
     @property
     def position(self):
-        self._switch_left_menus(["交易", "持仓"])
+        self._switch_left_menus(["交易", "模拟", "持仓"])
         return self._get_data_from_table("position")
         # "position": 2,
         # "entrusts": 3,
         # "trades": 4
 
+    def _get_grid_table(self):
+        return self._main.findFirstR(AXRole='AXGroup').AXParent
+
     def _get_data_from_table(self, control):
         # table = self._main.findAllR(AXRole='AXTable')[
         #     self.config.TABLE_CONTROL_ID[control]]
         # table = self._main.AXChildren[self.config.TABLE_CONTROL_ID[control]].AXChildren[0]
-        table = self._main.findFirstR(AXRole='AXGroup').AXParent
+        table = self._get_grid_table()  # self._main.findFirstR(AXRole='AXGroup').AXParent
         result = []
         titles = table.AXHeader.findAllR(AXRole='AXButton')
         for row in table.AXRows:
@@ -202,19 +190,38 @@ class MACClientTrader(IClientTrader):
     def cancel_entrusts(self):
         # TODO
         # self.refresh()
-        self._switch_left_menus(["撤单[F3]"])
-
-        return self._get_grid_data(self._config.COMMON_GRID_CONTROL_ID)
+        self._switch_left_menus(["交易", "模拟", "委托"])
+        return self._get_grid_table()
 
     @ perf_clock
     def cancel_entrust(self, entrust_no):
         # TODO
         # self.refresh()
-        for i, entrust in enumerate(self.cancel_entrusts):
-            if entrust[self._config.CANCEL_ENTRUST_ENTRUST_FIELD] == entrust_no:
-                self._cancel_entrust_by_double_click(i)
-                return self._handle_pop_dialogs()
-        return {"message": "委托单状态错误不能撤单, 该委托单可能已经成交或者已撤"}
+        # for i, entrust in enumerate(self.cancel_entrusts):
+        #     if entrust[self._config.CANCEL_ENTRUST_ENTRUST_FIELD] == entrust_no:
+        #         self._cancel_entrust_by_double_click(i)
+        #         return self._handle_pop_dialogs()
+        # return {"message": "委托单状态错误不能撤单, 该委托单可能已经成交或者已撤"}
+        table = self.cancel_entrusts
+        for row in table.AXRows:
+            col = row.findAllR(AXRole='AXStaticText')
+            # titles = table.AXHeader.findFirstR(AXRole='AXButton',AXTitle = '')
+            # rowdata = {}
+            # clen = len(col)
+            # for l in range(0, clen-1):
+            #     rowdata[titles[l].AXTitle] = col[l].AXValue
+            if col[2].AXValue == entrust_no:
+                print("证券代码{}".format(entrust_no))
+                position = row.AXPosition
+                height = row.AXSize.height
+                width = row.AXSize.width
+                atomacos.mouse.doubleClick(
+                    position.x + width/2, position.y + height / 2)
+                self.confirm_pop_dialog()
+
+            # result.append(rowdata)
+            # print("获取表格数据: {} - {}".format(control, result))
+        # return result
 
     def cancel_all_entrusts(self):
         # self.refresh()
@@ -728,16 +735,17 @@ class BaseLoginClientTrader(MACClientTrader):
 if __name__ == '__main__':
     trader = MACClientTrader()
     trader.connect()
-    balance = trader.balance
-    print(balance)
-    position = trader.position
-    print(position)
+    # balance = trader.balance
+    # print(balance)
+    # position = trader.position
+    # print(position)
     entrusts = trader.today_entrusts
     print(entrusts)
-    trades = trader.today_trades
-    print(trades)
-    trader.buy('zh002119', '16.89', '1')
-    trader.sell('zh002119', '16.89', '1')
-    trader.cancel_all_buy_entrusts()
-    trader.cancel_all_sell_entrusts()
-    trader.cancel_all_entrusts()
+    # trades = trader.today_trades
+    # print(trades)
+    # trader.buy('zh002119', '16.89', '1')
+    # trader.sell('zh002119', '16.89', '1')
+    # trader.cancel_all_buy_entrusts()
+    # trader.cancel_all_sell_entrusts()
+    # trader.cancel_all_entrusts()
+    trader.cancel_entrust(entrust_no='002219')
