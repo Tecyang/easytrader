@@ -109,8 +109,8 @@ class MACClientTrader(IClientTrader):
             atomacos.launchAppByBundleId("cn.com.10jqka.macstockPro")
             self._app = atomacos.getAppRefByBundleId(
                 "cn.com.10jqka.macstockPro")
-            # self._main = self._app.windows()[0]
-            self._main = self._app.AXFocusedWindow
+            self._main = self._app.windows()[0]
+            # self._main = self._app.AXFocusedWindow
             print('成功获取到程序实例')
         else:
             self._app = pywinauto.Application().connect(path=connect_path, timeout=10)
@@ -149,7 +149,7 @@ class MACClientTrader(IClientTrader):
 
     @property
     def position(self):
-        self._switch_left_menus(["交易", "模拟", "持仓"])
+        self._switch_left_menus(["交易", self._config.TRADER_TYPE, "持仓"])
         return self._get_data_from_table("position")
         # "position": 2,
         # "entrusts": 3,
@@ -178,19 +178,19 @@ class MACClientTrader(IClientTrader):
 
     @ property
     def today_entrusts(self):
-        self._switch_left_menus(["交易", "模拟", "委托"])
+        self._switch_left_menus(["交易", self._config.TRADER_TYPE, "委托"])
         return self._get_data_from_table("entrusts")
 
     @ property
     def today_trades(self):
-        self._switch_left_menus(["交易", "模拟", "成交"])
+        self._switch_left_menus(["交易", self._config.TRADER_TYPE, "成交"])
         return self._get_data_from_table("trades")
 
     @ property
     def cancel_entrusts(self):
         # TODO
         # self.refresh()
-        self._switch_left_menus(["交易", "模拟", "委托"])
+        self._switch_left_menus(["交易", self._config.TRADER_TYPE, "委托"])
         return self._get_grid_table()
 
     @ perf_clock
@@ -225,21 +225,21 @@ class MACClientTrader(IClientTrader):
 
     def cancel_all_entrusts(self):
         # self.refresh()
-        self._switch_left_menus(["交易", "模拟", "委托", "全撤"])
+        self._switch_left_menus(["交易", self._config.TRADER_TYPE, "委托", "全撤"])
         # 点击全部撤销控件
         self.wait(0.2)
         self.confirm_pop_dialog()
 
     def cancel_all_buy_entrusts(self):
         # self.refresh()
-        self._switch_left_menus(["交易", "模拟", "委托", "撤买"])
+        self._switch_left_menus(["交易", self._config.TRADER_TYPE, "委托", "撤买"])
         # 点击全部撤销控件
         self.wait(0.2)
         self.confirm_pop_dialog()
 
     def cancel_all_sell_entrusts(self):
         # self.refresh()
-        self._switch_left_menus(["交易", "模拟", "委托", "撤卖"])
+        self._switch_left_menus(["交易", self._config.TRADER_TYPE, "委托", "撤卖"])
         # 点击全部撤销控件
         self.wait(0.2)
         self.confirm_pop_dialog()
@@ -270,7 +270,7 @@ class MACClientTrader(IClientTrader):
     @ perf_clock
     def buy(self, security, price, amount, **kwargs):
 
-        self._switch_left_menus(["交易", "模拟", "买入"])
+        self._switch_left_menus(["交易", self._config.TRADER_TYPE, "买入"])
         print('进行交易{}-{}-{}'.format(security, price, amount))
 
         res = self.trade(security, price, amount, 0)
@@ -280,7 +280,7 @@ class MACClientTrader(IClientTrader):
 
     @ perf_clock
     def sell(self, security, price, amount, **kwargs):
-        self._switch_left_menus(["交易", "模拟", "卖出"])
+        self._switch_left_menus(["交易", self._config.TRADER_TYPE, "卖出"])
 
         res = self.trade(security, price, amount, 1)
         print("卖出结果-{}".format(res))
@@ -743,9 +743,10 @@ if __name__ == '__main__':
     print(entrusts)
     # trades = trader.today_trades
     # print(trades)
-    # trader.buy('zh002119', '16.89', '1')
+    trader.buy('zh002119', '8.31', '100')
+    trader.buy('zh002119', '8.31', '100')
     # trader.sell('zh002119', '16.89', '1')
     # trader.cancel_all_buy_entrusts()
     # trader.cancel_all_sell_entrusts()
     # trader.cancel_all_entrusts()
-    trader.cancel_entrust(entrust_no='002219')
+    # trader.cancel_entrust(entrust_no='002219')
